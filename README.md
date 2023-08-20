@@ -19,8 +19,8 @@ commands below are supposed to be executed in the current repo.
 
 ### Download Anki submodule
 
-git submodule update --init
-
+    git submodule update --init
+    
 ### C toolchain
 
 Install Xcode/Visual Studio if on macOS/Windows.
@@ -33,16 +33,16 @@ Install rustup from <https://rustup.rs/>
 
 #### Debian/Ubuntu:
 
-  sudo apt install ninja-build
+    sudo apt install ninja-build
 
 #### macOS:
 
-  brew upgrade
-  brew install ninja
+    brew upgrade
+    brew install ninja
 
 #### Windows if using choco:
 
-  choco install ninja
+    choco install ninja
 
 You can alternatively download a binary from <https://github.com/ninja-build/ninja/releases>
 and put it on your path.
