@@ -53,7 +53,7 @@ class MainThreadWarningTest {
     fun warnsOnMainThreadOperations() {
         getBackend().use { backend ->
             backend.openCollection(":memory:")
-            backend.fullQuery("select 1", null)
+            backend.fullQueryProto("select 1", emptyArray())
         }
         assertTrue(
             "expected an 'Op on UI thread' warning, got: ${TestBindingLoggerFactory.warnings}",

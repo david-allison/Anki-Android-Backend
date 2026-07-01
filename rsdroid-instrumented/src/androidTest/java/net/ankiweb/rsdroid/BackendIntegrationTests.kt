@@ -59,7 +59,7 @@ class BackendIntegrationTests : InstrumentedTest() {
     @Test
     fun fullQueryTest() {
         val backendV1 = getBackend("initial_version_2_12_1.anki2")
-        backendV1.fullQuery("select * from col")
+        backendV1.fullQueryProto("select * from col", emptyArray())
     }
 
     @Test

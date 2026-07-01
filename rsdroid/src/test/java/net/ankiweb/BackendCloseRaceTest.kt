@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package net.ankiweb
 
-import android.annotation.SuppressLint
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import net.ankiweb.rsdroid.Backend
 import net.ankiweb.rsdroid.BackendException
@@ -34,15 +33,14 @@ class BackendCloseRaceTest {
     fun closeDoesNotInterruptInFlightCalls() {
         val backend = getBackend()
         backend.openCollection(":memory:")
-        @SuppressLint("CheckResult")
-        backend.fullQuery(longQuery(rows = 1_000), null) // warm up the query path
+        backend.fullQueryProto(longQuery(rows = 1_000), emptyArray()) // warm up the query path
 
         var queryError: Exception? = null
         val queryThread =
             thread(name = "backend-slow-query") {
                 try {
                     // keeps the backend busy inside a single native call for over a second
-                    backend.fullQuery(longQuery(rows = 50_000_000), null)
+                    backend.fullQueryProto(longQuery(rows = 50_000_000), emptyArray())
                 } catch (e: Exception) {
                     queryError = e
                 }

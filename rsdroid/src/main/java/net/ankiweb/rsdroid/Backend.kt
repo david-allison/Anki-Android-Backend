@@ -15,7 +15,6 @@
  */
 package net.ankiweb.rsdroid
 
-import androidx.annotation.CheckResult
 import androidx.annotation.VisibleForTesting
 import anki.ankidroid.DbResponse
 import anki.backend.BackendError
@@ -24,11 +23,16 @@ import anki.backend.GeneratedBackend
 import anki.generic.Int64
 import com.google.protobuf.ByteString
 import com.google.protobuf.InvalidProtocolBufferException
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.JsonUnquotedLiteral
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 import net.ankiweb.rsdroid.database.NotImplementedException
 import net.ankiweb.rsdroid.database.SQLHandler
-import org.json.JSONArray
-import org.json.JSONException
-import org.json.JSONObject
 import org.slf4j.LoggerFactory
 import java.io.Closeable
 import java.io.File
@@ -157,27 +161,6 @@ open class Backend(
 
     override fun getPath(): String? = throw NotImplementedException()
 
-    @CheckResult
-    override fun fullQuery(
-        query: String,
-        bindArgs: Array<Any?>?,
-    ): JSONArray =
-        try {
-            fullQueryInternal(query, bindArgs ?: emptyArray())
-        } catch (e: JSONException) {
-            throw RuntimeException(e)
-        }
-
-    @Throws(JSONException::class)
-    private fun fullQueryInternal(
-        sql: String,
-        bindArgs: Array<Any?>,
-    ): JSONArray {
-        checkMainThreadSQL(sql)
-        val output = runDbCommand(dbRequestJson(sql, bindArgs)).toStringUtf8()
-        return JSONArray(output)
-    }
-
     override fun insertForId(
         sql: String,
         bindArgs: Array<Any?>?,
@@ -279,22 +262,50 @@ open class Backend(
 }
 
 /**
- * Build a JSON DB request
+ * Build a JSON DB request.
+ *
+ * TODO: consider a typed protobuf request upstream: the RunDbCommand* RPCs in
+ *  anki/proto/anki/ankidroid.proto take generic.Json. That would remove the JSON
+ *  encode/parse on every statement, and would allow binding blobs.
  */
-private fun dbRequestJson(
+internal fun dbRequestJson(
     sql: String = "",
     bindArgs: Array<out Any?> = emptyArray(),
     firstRowOnly: Boolean = false,
 ): ByteString {
-    val o =
-        JSONObject().apply {
+    val request =
+        buildJsonObject {
             put("kind", "query")
             put("sql", sql)
-            put("args", JSONArray(bindArgs.toList()))
+            putJsonArray("args") { bindArgs.forEach { add(it.toBindArgJson()) } }
             put("first_row_only", firstRowOnly)
         }
-    return ByteString.copyFromUtf8(o.toString())
+    return ByteString.copyFromUtf8(request.toString())
 }
+
+/**
+ * org.json (previously used here) serialised whole Doubles without a trailing
+ * ".0", and the backend binds such numbers as INTEGER rather than REAL; SQLite
+ * typing is visible to queries, so that formatting is preserved exactly.
+ */
+@OptIn(ExperimentalSerializationApi::class)
+private fun Any?.toBindArgJson(): JsonPrimitive =
+    when (this) {
+        null -> JsonNull
+        is String -> JsonPrimitive(this)
+        is Boolean -> JsonPrimitive(this)
+        is Number -> {
+            var literal = toString()
+            require(!literal.contains("NaN") && !literal.contains("Infinity")) {
+                "JSON does not allow non-finite numbers: $literal"
+            }
+            if (literal.contains('.') && !literal.contains('e') && !literal.contains('E')) {
+                literal = literal.trimEnd('0').trimEnd('.')
+            }
+            JsonUnquotedLiteral(literal)
+        }
+        else -> JsonPrimitive(toString())
+    }
 
 /**
  * Unpack success/error tuple from backend, and throw if error.

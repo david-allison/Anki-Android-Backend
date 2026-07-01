@@ -17,17 +17,8 @@ package net.ankiweb.rsdroid.database
 
 import androidx.annotation.CheckResult
 import anki.ankidroid.DbResponse
-import org.json.JSONArray
 
 interface SQLHandler {
-    @CheckResult
-    fun fullQuery(
-        query: String,
-        bindArgs: Array<Any?>?,
-    ): JSONArray
-
-    fun fullQuery(query: String): JSONArray = fullQuery(query, null)
-
     fun executeGetRowsAffected(
         sql: String,
         bindArgs: Array<Any?>?,
