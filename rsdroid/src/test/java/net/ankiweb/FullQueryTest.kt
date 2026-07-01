@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package net.ankiweb
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.double
 import kotlinx.serialization.json.int
@@ -13,17 +12,15 @@ import net.ankiweb.rsdroid.BackendException
 import net.ankiweb.rsdroid.BackendFactory.getBackend
 import net.ankiweb.rsdroid.database.SQLHandler
 import net.ankiweb.rsdroid.testing.RustBackendLoader.ensureSetup
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertThrows
-import org.junit.Assert.assertTrue
-import org.junit.Before
-import org.junit.Test
-import org.junit.runner.RunWith
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
-@RunWith(AndroidJUnit4::class)
 class FullQueryTest {
-    @Before
+    @BeforeEach
     fun loadLibrary() {
         ensureSetup()
     }

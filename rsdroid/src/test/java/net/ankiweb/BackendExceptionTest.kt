@@ -10,9 +10,9 @@ import net.ankiweb.rsdroid.BackendException.BackendDbException.BackendDbFileTooO
 import net.ankiweb.rsdroid.BackendException.BackendDbException.BackendDbFullException
 import net.ankiweb.rsdroid.BackendException.BackendDbException.BackendDbLockedException
 import net.ankiweb.rsdroid.BackendException.BackendDbException.BackendDbMissingEntityException
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 
 /** Tests [BackendDbException.fromDbError]: AnkiDroid's startup error handling relies on these types */
 class BackendExceptionTest {
