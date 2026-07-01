@@ -17,7 +17,9 @@ package org.slf4j.impl
 
 import org.slf4j.ILoggerFactory
 import org.slf4j.Logger
+import org.slf4j.helpers.MessageFormatter
 import org.slf4j.helpers.NOPLogger
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * A minimal SLF4J 1.7-style binding: slf4j-api 1.7.x discovers it by this exact
@@ -46,7 +48,46 @@ class StaticLoggerBinder private constructor() {
     }
 }
 
-/** Discards all log output like slf4j-nop, but with a distinct type tests can assert on */
+/**
+ * Discards all log output like slf4j-nop — but with a distinct type tests can
+ * assert on, and recording warnings so tests can assert diagnostics actually fire.
+ */
 class TestBindingLoggerFactory : ILoggerFactory {
-    override fun getLogger(name: String): Logger = NOPLogger.NOP_LOGGER
+    override fun getLogger(name: String): Logger = WarningRecordingLogger
+
+    companion object {
+        /** Formatted messages of every [Logger.warn] call since [clearWarnings] */
+        val warnings = CopyOnWriteArrayList<String>()
+
+        fun clearWarnings() = warnings.clear()
+    }
+}
+
+/** Silent, except warnings are recorded into [TestBindingLoggerFactory.warnings] */
+private object WarningRecordingLogger : Logger by NOPLogger.NOP_LOGGER {
+    override fun warn(msg: String) {
+        TestBindingLoggerFactory.warnings.add(msg)
+    }
+
+    override fun warn(
+        format: String,
+        arg: Any?,
+    ) {
+        TestBindingLoggerFactory.warnings.add(MessageFormatter.format(format, arg).message)
+    }
+
+    override fun warn(
+        format: String,
+        arg1: Any?,
+        arg2: Any?,
+    ) {
+        TestBindingLoggerFactory.warnings.add(MessageFormatter.format(format, arg1, arg2).message)
+    }
+
+    override fun warn(
+        format: String,
+        vararg arguments: Any?,
+    ) {
+        TestBindingLoggerFactory.warnings.add(MessageFormatter.arrayFormat(format, arguments).message)
+    }
 }
