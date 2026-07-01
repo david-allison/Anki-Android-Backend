@@ -15,7 +15,6 @@
  */
 package net.ankiweb.rsdroid
 
-import android.os.Looper
 import androidx.annotation.CheckResult
 import androidx.annotation.VisibleForTesting
 import anki.ankidroid.DbResponse
@@ -33,6 +32,7 @@ import org.json.JSONObject
 import org.slf4j.LoggerFactory
 import java.io.Closeable
 import java.io.File
+import java.lang.reflect.Method
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
@@ -263,21 +263,8 @@ open class Backend(
     }
 
     private fun runIfOnMainThread(func: () -> Unit) {
-        try {
-            if (Looper.getMainLooper().thread == Thread.currentThread()) {
-                func()
-            }
-        } catch (exc: NoSuchMethodError) {
-            // running outside Android, or old API
-        } catch (ex: RuntimeException) {
-            // If running with no Android dependencies, we get the error:
-            // Method getMainLooper in android.os.Looper not mocked.
-            // See https://developer.android.com/r/studio-ui/build/not-mocked for details.
-            // runIfOnMainThread is non-vital, so we can ignore the exception
-            if (ex.message?.contains("android.os.Looper not mocked") == true) {
-                return
-            }
-            throw ex
+        if (AndroidMainThread.currentThreadIsMainThread()) {
+            func()
         }
     }
 
@@ -336,5 +323,47 @@ private fun unpackResult(result: Array<ByteArray?>?): ByteArray {
     } else {
         // should not happen
         throw BackendException("both ok & err cases null")
+    }
+}
+
+/**
+ * Reflective access to android.os.Looper, so this module has no compile-time
+ * Android dependency. Only used for the [Backend.checkOperationsRunOnMainThread]
+ * debug diagnostic, so failures are always non-fatal:
+ * - Android / Robolectric: a real main-thread check
+ * - plain JVM: the Looper class is absent, never the main thread
+ * - Android unit tests (non-mocked android.jar): getMainLooper throws
+ *   "not mocked", never the main thread
+ */
+internal object AndroidMainThread {
+    private val mainLooperMethod: Method?
+    private val threadMethod: Method?
+
+    init {
+        var mainLooper: Method? = null
+        var thread: Method? = null
+        try {
+            val looperClass = Class.forName("android.os.Looper")
+            mainLooper = looperClass.getMethod("getMainLooper")
+            thread = looperClass.getMethod("getThread")
+        } catch (ignored: Throwable) {
+            // not running on Android
+        }
+        mainLooperMethod = mainLooper
+        threadMethod = thread
+    }
+
+    fun currentThreadIsMainThread(): Boolean {
+        val mainLooperMethod = mainLooperMethod ?: return false
+        val threadMethod = threadMethod ?: return false
+        return try {
+            // the looper and its thread are deliberately not cached:
+            // Robolectric recreates the main looper between tests
+            val looper = mainLooperMethod.invoke(null) ?: return false
+            threadMethod.invoke(looper) == Thread.currentThread()
+        } catch (ignored: Throwable) {
+            // e.g. InvocationTargetException("Method getMainLooper ... not mocked")
+            false
+        }
     }
 }
