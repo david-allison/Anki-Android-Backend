@@ -1,7 +1,3 @@
-import com.android.build.gradle.tasks.BundleAar
-
-import java.util.zip.ZipFile
-
 plugins {
     alias(libs.plugins.android.library) // required for aar generation to link to from AnkiDroid
     id 'signing'
@@ -144,27 +140,6 @@ android {
             // replacement for AGP's BuildConfig: see generateBuildConfig above
             kotlin.srcDirs += "build/generated/buildconfig"
             java.srcDirs += "build/generated/buildconfig"
-            jniLibs.srcDirs 'build/generated/jniLibs'
-            resources {
-                srcDirs "src/main/resources"
-            }
-            assets {
-                srcDirs "build/generated/anki_artifacts"
-            }
-        }
-    }
-}
-
-afterEvaluate {
-    // only the publishable AARs: AGP 9's bundle<Variant>LocalLintAar tasks omit jniLibs
-    tasks.withType(BundleAar).matching { it.name ==~ /bundle(Debug|Release)Aar/ }.configureEach { bundleAarTask ->
-        bundleAarTask.doLast {
-            def aarFile = bundleAarTask.outputs.files.singleFile
-            def zipFile = new ZipFile(aarFile)
-            int libCount = zipFile.entries().toList().count { it.name.contains(".so") }
-            if (libCount == 0 || (System.getenv("ALL_ARCHS") == "1" && libCount != 4)) {
-                throw new GradleException("AAR appears to be missing shared library!")
-            }
         }
     }
 }
