@@ -1,0 +1,52 @@
+plugins {
+    alias(libs.plugins.android.library)
+}
+
+android {
+    // distinct from :rsdroid's old namespace; the Kotlin packages remain net.ankiweb.rsdroid.*
+    namespace = 'net.ankiweb.rsdroid.android'
+    compileSdk = libs.versions.compileSdk.get().toInteger()
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    defaultConfig {
+        minSdk = libs.versions.minSdk.get().toInteger()
+
+        consumerProguardFiles "consumer-rules.pro"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled = false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    testOptions {
+        targetSdk = libs.versions.targetSdk.get().toInteger()
+    }
+
+    lint {
+        targetSdk = libs.versions.targetSdk.get().toInteger()
+    }
+}
+
+dependencies {
+    api project(path: ':rsdroid')
+}
+
+// Install Git pre-commit hook for format-rust
+tasks.register('installGitHook', Copy) {
+    from new File(rootProject.rootDir, 'pre-commit')
+    into { new File(rootProject.rootDir, '.git/hooks') }
+    filePermissions {
+        user {
+            read = write = execute = true
+        }
+    }
+}
+// to run manually: `./gradlew installGitHook`
+tasks.named('preBuild').configure { dependsOn('installGitHook') }
