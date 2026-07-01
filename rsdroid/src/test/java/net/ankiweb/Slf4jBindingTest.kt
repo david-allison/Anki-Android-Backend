@@ -15,8 +15,8 @@
  */
 package net.ankiweb
 
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
 import org.slf4j.impl.TestBindingLoggerFactory
 
@@ -36,10 +36,10 @@ class Slf4jBindingTest {
     @Test
     fun slf4jApiHonours17StyleBindings() {
         assertEquals(
-            "slf4j-api no longer binds via StaticLoggerBinder (bumped to 2.x?). " +
-                "This silently breaks AnkiDroid's slf4j-timber bridge - see the class KDoc",
             TestBindingLoggerFactory::class.java,
             LoggerFactory.getILoggerFactory().javaClass,
+            "slf4j-api no longer binds via StaticLoggerBinder (bumped to 2.x?). " +
+                "This silently breaks AnkiDroid's slf4j-timber bridge - see the class KDoc",
         )
     }
 }

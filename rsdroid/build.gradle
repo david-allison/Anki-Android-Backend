@@ -126,6 +126,11 @@ android {
 
     testOptions {
         targetSdk = libs.versions.targetSdk.get().toInteger()
+        // JUnit 5; becomes a plain `test { useJUnitPlatform() }` once this module
+        // leaves the Android plugin
+        unitTests.all {
+            it.useJUnitPlatform()
+        }
     }
 
     lint {
@@ -173,10 +178,8 @@ dependencies {
     implementation libs.slf4j.api
 
     testImplementation libs.junit.jupiter
-    testImplementation libs.robolectric
-    testImplementation libs.androidx.core
-    testImplementation libs.androidx.test.junit
     testImplementation project(path: ':rsdroid-testing')
+    testRuntimeOnly libs.junit.platform.launcher
 }
 
 
