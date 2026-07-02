@@ -47,7 +47,9 @@ fn run_gradle() -> Result<()> {
             Command::new("./gradlew")
         };
         cmd.env("RUNNING_FROM_BUILD_SCRIPT", "1")
-            .args(["assembleRelease", "rsdroid-testing:build"])
+            // assembleRelease covers the Android modules; rsdroid (java-library)
+            // needs its jar built explicitly
+            .args(["assembleRelease", "rsdroid:assemble", "rsdroid-testing:build"])
             .ensure_success()?;
     }
     Ok(())

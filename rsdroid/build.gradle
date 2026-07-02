@@ -1,11 +1,14 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
-    alias(libs.plugins.android.library) // required for aar generation to link to from AnkiDroid
+    id 'java-library'
+    alias(libs.plugins.kotlin.jvm)
     id 'signing'
     alias(libs.plugins.gradle.maven.publish.plugin)
 }
 
 apply from: "$rootDir/build-rust.gradle"
-preBuild.dependsOn "buildRust"
 
 def gitHead = { File repo ->
     providers.exec {
@@ -13,61 +16,65 @@ def gitHead = { File repo ->
     }.standardOutput.asText.map { it.trim() }
 }
 
-// Generate BuildConfig
-androidComponents {
-    onVariants(selector().all()) { variant ->
-        def generateBuildConfig = tasks.register("generate${variant.name.capitalize()}BuildConfig", GenerateBuildConfigTask) {
-            ankiCommitHash = gitHead(new File(rootDir, "anki"))
-            backendGitCommitHash = gitHead(rootDir)
-            ankiDesktopVersion = providers.gradleProperty("VERSION_NAME").map { it.replaceFirst(/.*anki/, "") }
-            cargoLock = rootProject.file("Cargo.lock")
-        }
-        variant.sources.kotlin.addGeneratedSourceDirectory(generateBuildConfig) { it.outputDir }
+// Generate BuildConfig. Without AGP there is no addGeneratedSourceDirectory,
+// so outputDir is set here and added to the source set below.
+def generateBuildConfig = tasks.register("generateBuildConfig", GenerateBuildConfigTask) {
+    ankiCommitHash = gitHead(new File(rootDir, "anki"))
+    backendGitCommitHash = gitHead(rootDir)
+    ankiDesktopVersion = providers.gradleProperty("VERSION_NAME").map { it.replaceFirst(/.*anki/, "") }
+    cargoLock = rootProject.file("Cargo.lock")
+    outputDir = layout.buildDirectory.dir("generated/buildconfig")
+}
+
+// buildRust produces build/generated/source/backend (GeneratedBackend.kt etc.)
+tasks.named("compileKotlin") {
+    dependsOn("buildRust", generateBuildConfig)
+}
+tasks.named("compileJava") {
+    dependsOn("buildRust")
+}
+
+// the sources jar packages the generated source dirs without compiling them
+tasks.withType(Jar).configureEach { jarTask ->
+    if (jarTask.name.toLowerCase().contains("source")) {
+        jarTask.dependsOn("buildRust", generateBuildConfig)
     }
 }
 
-android {
-    namespace = 'net.ankiweb.rsdroid'
-    compileSdk = libs.versions.compileSdk.get().toInteger()
-    ndkVersion = libs.versions.ndk.get()
+// ktlint scans the source-set directories (then skips build/ files), which
+// Gradle validates as reading generateBuildConfig's output: order them, without
+// making a lone `ktlintCheck` invocation generate code it will not lint
+tasks.matching { it.name.startsWith("runKtlintCheckOver") || it.name.startsWith("runKtlintFormatOver") }.configureEach {
+    it.mustRunAfter(generateBuildConfig)
+}
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+// junit-jupiter 6 requires JVM 17+, and the Java-11 target above makes dependency
+// resolution reject it for the test classpaths. The library keeps targeting 11 for
+// Android consumers; tests run on the build JVM (17+, enforced by the root build).
+configurations.named("testCompileClasspath") {
+    attributes.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 17)
+}
+configurations.named("testRuntimeClasspath") {
+    attributes.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 17)
+}
+
+sourceSets {
+    main {
+        kotlin.srcDirs += "build/generated/source/backend"
+        // the protoc-generated .java message classes must also be seen by javac
+        java.srcDirs += "build/generated/source/backend"
+        // replacement for AGP's BuildConfig: see generateBuildConfig above
+        kotlin.srcDirs += "build/generated/buildconfig"
     }
+}
 
-    defaultConfig {
-        minSdk = libs.versions.minSdk.get().toInteger()
-
-        consumerProguardFiles "consumer-rules.pro"
-    }
-
-    buildTypes {
-        release {
-            minifyEnabled = false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
-
-    testOptions {
-        targetSdk = libs.versions.targetSdk.get().toInteger()
-        // JUnit 5; becomes a plain `test { useJUnitPlatform() }` once this module
-        // leaves the Android plugin
-        unitTests.all {
-            it.useJUnitPlatform()
-        }
-    }
-
-    lint {
-        targetSdk = libs.versions.targetSdk.get().toInteger()
-    }
-
-    sourceSets {
-        main {
-            kotlin.srcDirs += "build/generated/source/backend"
-            java.srcDirs += "build/generated/source/backend"
-        }
-    }
+test {
+    useJUnitPlatform()
 }
 
 dependencies {
@@ -84,6 +91,11 @@ dependencies {
     testRuntimeOnly libs.junit.platform.launcher
 }
 
+tasks.withType(KotlinCompile).configureEach {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_11
+    }
+}
 
 mavenPublishing {
     // Use https://central.sonatype.com/account with david-allison's GitHub login, not Google
