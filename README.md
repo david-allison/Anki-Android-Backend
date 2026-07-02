@@ -90,12 +90,13 @@ set PATH=%PATH%;c:\msys64\usr\bin
 
 ## Building
 
-Two main files need to be built:
+Three main artifacts need to be built:
 
-- The main .aar file, which contains the backend Kotlin code, web assets, and
-Anki backend code compiled for Android.
-- A .jar that contains the backend code compiled for the host platform, for use
-with Robolectric unit tests.
+- `rsdroid.jar`: the backend Kotlin API, usable on any JVM.
+- `rsdroid-android-release.aar`: the Android packaging — the androidx.sqlite
+bridge, web assets, and the Anki backend code compiled for Android.
+- `rsdroid-testing.jar`: the backend code compiled for the host platform, for
+use with Robolectric unit tests.
 
 You should do the first build with the provided shell .sh/.bat file, as it will
 take care of downloading the target architecture library as well. You'll need
