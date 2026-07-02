@@ -15,12 +15,12 @@
  */
 package net.ankiweb.rsdroid.testing
 
-import org.apache.commons.exec.OS
 import java.io.*
 import java.lang.IllegalStateException
 import java.lang.RuntimeException
 import java.security.MessageDigest
 import java.util.HashMap
+import java.util.Locale
 import kotlin.Throws
 
 /**
@@ -51,15 +51,15 @@ object RustBackendLoader {
         }
         // This should help diagnose some issues,
         print("loading rsdroid-testing for: " + System.getProperty("os.name"))
-        if (OS.isFamilyWindows()) {
-            load("rsdroid", ".dll")
-        } else if (OS.isFamilyMac()) {
-            load("librsdroid", ".dylib")
-        } else if (OS.isFamilyUnix()) {
-            load("librsdroid", ".so")
-        } else {
-            val osName = System.getProperty("os.name")
-            throw IllegalStateException(String.format("Could not determine OS Type for: '%s'", osName))
+        // os.name detection replaces commons-exec's OS: it was this jar's only
+        // dependency, and file-based consumers (local_backend=true) get no
+        // POM transitives. Mac is tested before the unix fallback deliberately.
+        val osName = System.getProperty("os.name").lowercase(Locale.ROOT)
+        when {
+            osName.startsWith("windows") -> load("rsdroid", ".dll")
+            osName.startsWith("mac") -> load("librsdroid", ".dylib")
+            osName.contains("linux") || osName.contains("nix") || osName.contains("nux") -> load("librsdroid", ".so")
+            else -> throw IllegalStateException(String.format("Could not determine OS Type for: '%s'", osName))
         }
         hasSetUp = true
     }
