@@ -49,7 +49,11 @@ fn run_gradle() -> Result<()> {
         cmd.env("RUNNING_FROM_BUILD_SCRIPT", "1")
             // assembleRelease covers the Android modules; rsdroid (java-library)
             // needs its jar built explicitly
-            .args(["assembleRelease", "rsdroid:assemble", "rsdroid-testing:build"])
+            .args([
+                "assembleRelease",
+                "rsdroid:assemble",
+                "rsdroid-testing:build",
+            ])
             .ensure_success()?;
     }
     Ok(())
