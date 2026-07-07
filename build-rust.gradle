@@ -1,12 +1,12 @@
-tasks.register('buildRust', Exec) {
-    // ensure script doesn't try to start gradle again
-    environment 'RUNNING_FROM_GRADLE', '1'
-    workingDir "$rootDir"
-    commandLine "cargo", "run", "-p", "build_rust"
-}
-
-def getSdkDir() {
-    Properties properties = new Properties()
-    properties.load(project.rootProject.file('local.properties').newDataInputStream())
-    return properties.getProperty('sdk.dir')
+// One cargo pipeline produces every module's native/generated inputs, so the
+// task is registered once, on the root project; applying modules reference it
+// by its ':buildRust' path. Per-project duplicates would run the pipeline twice
+// per build, and race under --parallel (build_rust deletes its output dirs).
+if (rootProject.tasks.findByName('buildRust') == null) {
+    rootProject.tasks.register('buildRust', Exec) {
+        // ensure script doesn't try to start gradle again
+        environment 'RUNNING_FROM_GRADLE', '1'
+        workingDir "$rootDir"
+        commandLine "cargo", "run", "-p", "build_rust"
+    }
 }

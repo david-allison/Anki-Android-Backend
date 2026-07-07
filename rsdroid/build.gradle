@@ -94,16 +94,16 @@ def generateBuildConfig = tasks.register("generateBuildConfig", GenerateBuildCon
 }
 // buildRust produces build/generated/source/backend (GeneratedBackend.kt etc.)
 tasks.named("compileKotlin") {
-    dependsOn("buildRust", generateBuildConfig)
+    dependsOn(":buildRust", generateBuildConfig)
 }
 tasks.named("compileJava") {
-    dependsOn("buildRust")
+    dependsOn(":buildRust")
 }
 
 // the sources jar packages the generated source dirs without compiling them
 tasks.withType(Jar).configureEach { jarTask ->
     if (jarTask.name.toLowerCase().contains("sources")) {
-        jarTask.dependsOn("buildRust", generateBuildConfig)
+        jarTask.dependsOn(":buildRust", generateBuildConfig)
     }
 }
 
