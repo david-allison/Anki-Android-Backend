@@ -18,6 +18,13 @@ package net.ankiweb.rsdroid
 
 typealias CustomBackendCreator = (languages: Iterable<String>) -> Backend
 
+/**
+ * Creates [Backend] instances.
+ *
+ * Each [getBackend] call returns a new backend, owned by the caller:
+ * [Backend.close] it when finished. The `rsdroid` native library must be loaded
+ * before the first call; see [Backend] for platform specifics.
+ */
 object BackendFactory {
     /** To remove in 2.1.67 update */
     @JvmStatic
@@ -25,13 +32,18 @@ object BackendFactory {
     var defaultLegacySchema: Boolean = false
 
     /**
-     * The language(es) the backend uses for translations.
+     * The language(s) the backend uses for translations and error messages when
+     * [getBackend] is called without an explicit list.
      */
     var defaultLanguages: Iterable<String> = listOf("en")
 
     @JvmStatic
     private var backendForTesting: CustomBackendCreator? = null
 
+    /**
+     * Returns a new [Backend] using [languages] (or [defaultLanguages]) for
+     * translations, unless a test override was installed via [setOverride].
+     */
     @JvmStatic
     @JvmOverloads
     fun getBackend(languages: Iterable<String>? = null): Backend {

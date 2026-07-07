@@ -7,6 +7,27 @@ instead of having to reimplement them.
 This is a separate repo that gets published to a library that AnkiDroid consumes,
 so that AnkiDroid development is possible without a Rust toolchain installed.
 
+## Using the library
+
+Three artifacts are published under `io.github.david-allison`:
+
+| Artifact | Type | Use it from |
+| --- | --- | --- |
+| `anki-android-backend-android` | AAR | Android apps: the androidx.sqlite bridge, `librsdroid.so` per ABI, and web assets. Pulls in the JAR below. Call `System.loadLibrary("rsdroid")` before creating a backend. |
+| `anki-android-backend` | JAR | Any JVM: `Backend`, the generated API, exceptions. Contains no native libraries — load a host build of `librsdroid` first (see below). |
+| `anki-android-backend-testing` | JAR | Desktop JVMs (Robolectric tests, tools): bundles host builds of `librsdroid`; `RustBackendLoader.ensureSetup()` extracts and loads one. |
+
+The entry point is `BackendFactory.getBackend()`; see the KDoc on `Backend`. A
+minimal desktop-JVM example:
+
+```kotlin
+RustBackendLoader.ensureSetup() // from anki-android-backend-testing
+BackendFactory.getBackend().use { backend ->
+    backend.openCollection("collection.anki2")
+    // …generated API calls, e.g. backend.getCurrentDeck()…
+}
+```
+
 ## Prerequisites
 
 We assume you already have Android Studio, and are able to build the AnkiDroid
