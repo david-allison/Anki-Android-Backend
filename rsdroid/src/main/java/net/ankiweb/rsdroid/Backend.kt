@@ -27,6 +27,7 @@ import com.google.protobuf.InvalidProtocolBufferException
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.JsonUnquotedLiteral
@@ -242,7 +243,7 @@ open class Backend(
  *
  * TODO: consider a typed protobuf request upstream: the RunDbCommand* RPCs in
  *  anki/proto/anki/ankidroid.proto take generic.Json. That would remove the JSON
- *  encode/parse on every statement, and would allow binding blobs.
+ *  encode/parse on every statement, and would allow binding arbitrary blob bytes.
  */
 internal fun dbRequestJson(
     sql: String = "",
@@ -260,26 +261,38 @@ internal fun dbRequestJson(
 }
 
 /**
- * org.json (previously used here) serialised whole Doubles without a trailing
- * ".0", and the backend binds such numbers as INTEGER rather than REAL; SQLite
- * typing is visible to queries, so that formatting is preserved exactly.
+ * Matches the serialisation of Android's org.json (previously used here), because
+ * SQLite typing is query-visible: a Double/Float equal to a whole number
+ * serialises without a fraction — even above 1e7, where Double.toString switches
+ * to E-notation — and the backend binds it as INTEGER rather than REAL. Number
+ * types org.json didn't whitelist (e.g. BigDecimal) fall through to quoted
+ * strings, exactly as its wrap() emitted them.
  */
 @OptIn(ExperimentalSerializationApi::class)
-private fun Any?.toBindArgJson(): JsonPrimitive =
+private fun Any?.toBindArgJson(): JsonElement =
     when (this) {
         null -> JsonNull
         is String -> JsonPrimitive(this)
         is Boolean -> JsonPrimitive(this)
-        is Number -> {
-            var literal = toString()
-            require(!literal.contains("NaN") && !literal.contains("Infinity")) {
-                "JSON does not allow non-finite numbers: $literal"
+        // Preserve org.json's signed-byte array encoding. The backend accepts
+        // bytes 0..127 as blobs and rejects negative values, as before.
+        is ByteArray -> JsonArray(map { JsonPrimitive(it) })
+        is Double, is Float -> {
+            val value = (this as Number).toDouble()
+            require(!value.isNaN() && !value.isInfinite()) {
+                "JSON does not allow non-finite numbers: $value"
             }
-            if (literal.contains('.') && !literal.contains('e') && !literal.contains('E')) {
-                literal = literal.trimEnd('0').trimEnd('.')
-            }
+            val asLong = value.toLong()
+            val literal =
+                when {
+                    // org.json's NEGATIVE_ZERO case: Double only, Float falls through
+                    this is Double && equals(-0.0) -> "-0"
+                    value == asLong.toDouble() -> asLong.toString()
+                    else -> toString()
+                }
             JsonUnquotedLiteral(literal)
         }
+        is Int, is Long, is Short, is Byte -> JsonUnquotedLiteral(toString())
         else -> JsonPrimitive(toString())
     }
 
