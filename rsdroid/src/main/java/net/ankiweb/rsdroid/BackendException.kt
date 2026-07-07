@@ -43,24 +43,28 @@ open class BackendException : RuntimeException {
     @Suppress("unused")
     fun getDesktopHelpPageLink(backend: Backend): String? = helpPage?.let { backend.helpPageLink(it) }
 
+    /**
+     * A database-level error. Errors [fromDbError] recognises are typed as
+     * subclasses of this class; anything else is a plain [BackendDbException].
+     */
     open class BackendDbException(
         error: BackendError,
     ) : BackendException(error) {
         class BackendDbFileTooNewException(
             error: BackendError,
-        ) : BackendException(error)
+        ) : BackendDbException(error)
 
         class BackendDbFileTooOldException(
             error: BackendError,
-        ) : BackendException(error)
+        ) : BackendDbException(error)
 
         class BackendDbLockedException(
             error: BackendError,
-        ) : BackendException(error)
+        ) : BackendDbException(error)
 
         class BackendDbMissingEntityException(
             error: BackendError,
-        ) : BackendException(error)
+        ) : BackendDbException(error)
 
         /** The disk is full: analogue of android's SQLiteFullException */
         class BackendDbFullException(
@@ -84,7 +88,13 @@ open class BackendException : RuntimeException {
                 if (localised.contains("kind: MissingEntity")) {
                     return BackendDbMissingEntityException(error)
                 }
-                // checked before "kind: Other": these messages may contain both markers,
+                // the fixed lock message ("Anki already open, or media currently
+                // syncing.") is a stronger signal than the substring sniffs below
+                if (localised.startsWith("Anki already open")) {
+                    return BackendDbLockedException(error)
+                }
+                // checked before "kind: Other": rusqlite failures carry both markers
+                // (e.g. `SqliteFailure(Error { code: DiskFull ... })", kind: Other`),
                 // and the specific type must win (matches the historical SQLite mapping)
                 if (localised.contains("DiskFull")) {
                     return BackendDbFullException(error)
@@ -92,15 +102,7 @@ open class BackendException : RuntimeException {
                 if (localised.contains("DatabaseCorrupt")) {
                     return BackendDbCorruptException(error)
                 }
-                if (localised.contains("kind: Other")) {
-                    return BackendDbException(error)
-                }
-                // Anki already open, or media currently syncing.
-                return if (localised.startsWith("Anki already open")) {
-                    BackendDbLockedException(error)
-                } else {
-                    BackendDbException(error)
-                }
+                return BackendDbException(error)
             }
         }
     }

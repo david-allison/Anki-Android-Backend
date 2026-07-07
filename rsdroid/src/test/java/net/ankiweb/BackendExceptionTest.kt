@@ -74,9 +74,32 @@ class BackendExceptionTest {
 
     @Test
     fun lockedIsTyped() {
+        val exception = fromDbError("Anki already open, or media currently syncing.")
+        assertEquals(BackendDbLockedException::class.java, exception.javaClass)
+        assertTrue(exception is BackendDbException)
+    }
+
+    @Test
+    fun allRecognisedTypesAreDbExceptions() {
+        // `catch (e: BackendDbException)` must cover every typed DB error
+        for (message in listOf(
+            "DbError { info: \"\", kind: FileTooNew }",
+            "DbError { info: \"\", kind: FileTooOld }",
+            "DbError { info: \"\", kind: MissingEntity }",
+            "Anki already open, or media currently syncing.",
+            "DiskFull",
+            "DatabaseCorrupt",
+        )) {
+            assertTrue(fromDbError(message) is BackendDbException, "for message: $message")
+        }
+    }
+
+    @Test
+    fun lockedWinsOverSniffedMarkers() {
+        // the fixed lock message is a stronger signal than substring sniffs
         assertEquals(
             BackendDbLockedException::class.java,
-            fromDbError("Anki already open, or media currently syncing.").javaClass,
+            fromDbError("Anki already open, or media currently syncing. DiskFull").javaClass,
         )
     }
 

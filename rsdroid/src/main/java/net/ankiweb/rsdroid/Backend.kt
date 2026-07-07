@@ -90,6 +90,7 @@ open class Backend(
      * recognised: [BackendException.BackendDbException.BackendDbLockedException],
      * [BackendException.BackendDbException.BackendDbFileTooNewException],
      * [BackendException.BackendDbException.BackendDbFileTooOldException],
+     * [BackendException.BackendDbException.BackendDbMissingEntityException],
      * [BackendException.BackendDbException.BackendDbFullException],
      * [BackendException.BackendDbException.BackendDbCorruptException]
      */
