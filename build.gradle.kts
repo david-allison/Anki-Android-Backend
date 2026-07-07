@@ -35,7 +35,7 @@ tasks.register<Delete>("clean") {
 
 ext {
     val jvmVersion = Jvm.current().javaVersion?.majorVersion
-    val minSdk = libs.versions.compileSdk.get()
+    val minSdk = libs.versions.minSdk.get()
     if (jvmVersion != "17" && jvmVersion != "21" && jvmVersion != "25") {
         println("\n\n\n")
         println("**************************************************************************************************************")

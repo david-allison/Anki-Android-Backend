@@ -176,10 +176,11 @@ in the AnkiDroid repo, and add the following line:
 local_backend=true
 ```
 
-Check `Anki-AndroidBackend/gradle.properties`'s `BACKEND_VERSION` and
-`Anki-Android/build.gradle`'s `ext.ankidroid_backend_version`. Both variables
-should have the same value. If it is not the case, you must edit Anki-Android's
-one.
+With `local_backend=true`, AnkiDroid loads the artifacts straight from this
+repo's build directories (`rsdroid-android/build/outputs/aar`,
+`rsdroid/build/libs` and `rsdroid-testing/build/libs`), so no version numbers
+need to match. Without it, AnkiDroid uses the published `ankiBackend` version
+from its `gradle/libs.versions.toml`.
 
 After making the change, you should be able to build and run the project on an x86_64
 emulator/device (arm64 on M1 Macs), and run unit tests.

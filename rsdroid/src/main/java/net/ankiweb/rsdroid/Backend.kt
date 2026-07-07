@@ -59,8 +59,7 @@ private val logger = LoggerFactory.getLogger(Backend::class.java)
  *
  * Most of the API is inherited from [GeneratedBackend], generated from the
  * service definitions in `anki/proto/anki`. Calls are blocking and should be
- * dispatched off the main thread; enable [checkOperationsRunOnMainThread] to log
- * offenders during development.
+ * dispatched off the main thread.
  *
  * Backends are [Closeable]: [close] releases the native instance, after which
  * this object must not be used.

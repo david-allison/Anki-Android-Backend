@@ -60,9 +60,6 @@ android {
 
 
 dependencies {
-    implementation fileTree(dir: "libs", include: ["*.jar"])
-    implementation libs.androidx.appcompat
-
     androidTestImplementation libs.androidx.test.junit
     androidTestImplementation libs.androidx.espresso.core
     androidTestImplementation project(path: ':rsdroid-android')
