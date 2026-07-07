@@ -26,11 +26,6 @@ typealias CustomBackendCreator = (languages: Iterable<String>) -> Backend
  * before the first call; see [Backend] for platform specifics.
  */
 object BackendFactory {
-    /** To remove in 2.1.67 update */
-    @JvmStatic
-    @Suppress("unused")
-    var defaultLegacySchema: Boolean = false
-
     /**
      * The language(s) the backend uses for translations and error messages when
      * [getBackend] is called without an explicit list.
