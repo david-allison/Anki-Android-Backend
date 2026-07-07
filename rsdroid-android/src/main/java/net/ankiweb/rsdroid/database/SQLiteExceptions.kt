@@ -34,6 +34,9 @@ import java.util.regex.Pattern
  */
 fun BackendException.toSQLiteException(query: String): RuntimeException =
     when (this) {
+        // unlike the virtual dispatch this replaced, a `when` is not extended by
+        // subclassing: new BackendDbException subclasses in :rsdroid needing a
+        // specific SQLite mapping must add an arm here, above `is BackendDbException`
         is BackendDbFullException -> SQLiteFullException(localizedMessage)
         is BackendDbCorruptException ->
             SQLiteDatabaseCorruptException(

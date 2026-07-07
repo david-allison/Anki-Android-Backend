@@ -93,6 +93,7 @@ open class Backend(
      * @throws BackendException.BackendDbException.BackendDbLockedException
      * @throws BackendException.BackendDbException.BackendDbFileTooNewException
      * @throws BackendException.BackendDbException.BackendDbFileTooOldException
+     * @throws BackendException.BackendDbException.BackendDbMissingEntityException
      * @throws BackendException.BackendDbException.BackendDbFullException
      * @throws BackendException.BackendDbException.BackendDbCorruptException
      */
