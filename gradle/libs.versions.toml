@@ -8,8 +8,6 @@ ndk = "29.0.14206865"
 
 # https://developer.android.com/jetpack/androidx/releases/annotation
 androidxAnnotation = "1.9.1"
-# https://developer.android.com/jetpack/androidx/releases/appcompat
-androidxAppCompat = "1.8.0"
 # https://developer.android.com/jetpack/androidx/releases/core
 androidxCore = "1.7.0"
 # https://developer.android.com/jetpack/androidx/releases/sqlite
@@ -42,7 +40,6 @@ ktlintGradlePlugin = "14.2.0"
 
 [libraries]
 androidx-annotation = { module = "androidx.annotation:annotation", version.ref = "androidxAnnotation" }
-androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidxAppCompat" }
 androidx-core = { module = "androidx.test:core", version.ref = "androidxCore" }
 androidx-sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "androidxSqlite" }
 androidx-sqlite-ktx = { module = "androidx.sqlite:sqlite-ktx", version.ref = "androidxSqlite" }
