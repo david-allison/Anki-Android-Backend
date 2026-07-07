@@ -18,6 +18,15 @@ package net.ankiweb.rsdroid.database
 import androidx.annotation.CheckResult
 import anki.ankidroid.DbResponse
 
+/**
+ * The SQL surface of the backend: raw statements executed inside the backend
+ * against the currently open collection's database.
+ *
+ * Implemented by [net.ankiweb.rsdroid.Backend]; consumed by the androidx.sqlite
+ * bridge in `anki-android-backend-android`, which adapts it to
+ * `SupportSQLiteDatabase`. Query results stream as protobuf pages:
+ * [fullQueryProto] returns the first page, [getNextSlice] the following ones.
+ */
 interface SQLHandler {
     fun executeGetRowsAffected(
         sql: String,

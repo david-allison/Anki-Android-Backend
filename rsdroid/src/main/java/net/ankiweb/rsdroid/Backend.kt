@@ -43,6 +43,27 @@ import kotlin.concurrent.write
 
 private val logger = LoggerFactory.getLogger(Backend::class.java)
 
+/**
+ * A handle to an instance of the Anki backend: Anki Desktop's Rust core, driven
+ * over JNI. A backend can open at most one collection at a time.
+ *
+ * Obtain instances via [BackendFactory.getBackend]. The `rsdroid` native library
+ * must have been loaded first: on Android, load the copy packaged in the
+ * `anki-android-backend-android` AAR with `System.loadLibrary("rsdroid")`; on a
+ * desktop JVM, use `RustBackendLoader` from `anki-android-backend-testing`, or
+ * load a host build of `librsdroid` yourself.
+ *
+ * Most of the API is inherited from [GeneratedBackend], generated from the
+ * service definitions in `anki/proto/anki`. Calls are blocking and should be
+ * dispatched off the main thread; enable [checkOperationsRunOnMainThread] to log
+ * offenders during development.
+ *
+ * Backends are [Closeable]: [close] releases the native instance, after which
+ * this object must not be used.
+ *
+ * @param langs the language(s) used for translations and error messages,
+ * see [BackendFactory.defaultLanguages]
+ */
 open class Backend(
     langs: Iterable<String> = listOf("en"),
 ) : GeneratedBackend(),
@@ -96,7 +117,8 @@ open class Backend(
     }
 
     /**
-     * Open a backend instance, loading the shared library if not already loaded.
+     * Open a backend instance. The native library must already be loaded:
+     * see the class documentation.
      */
     init {
         checkMainThreadOp()

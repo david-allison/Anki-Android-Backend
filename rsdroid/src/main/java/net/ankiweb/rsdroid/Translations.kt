@@ -11,6 +11,11 @@ import anki.generic.String as GenericString
 // for testing purposes
 fun String.withoutUnicodeIsolation(): String = this.replace("\u2068", "").replace("\u2069", "")
 
+/**
+ * Typed access to Anki's translated strings, in the languages the backend was
+ * created with ([GeneratedTranslations] is generated from Anki's Fluent
+ * translation files). Obtain via [Backend.tr].
+ */
 class Translations(
     private val backend: Backend,
 ) : GeneratedTranslations {
