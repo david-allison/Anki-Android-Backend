@@ -147,7 +147,8 @@ dependencies {
     // Protobuf is part of the ABI, so include it as a compile/api dependency.
     api libs.protobuf.kotlin.lite
 
-    implementation libs.androidx.annotation
+    // api: @CheckResult etc. annotate public API signatures
+    api libs.androidx.annotation
     implementation libs.kotlinx.serialization.json
     implementation libs.slf4j.api
 
