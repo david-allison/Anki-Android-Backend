@@ -9,7 +9,7 @@ plugins {
 }
 
 apply from: "$rootDir/build-rust.gradle"
-preBuild.dependsOn "buildRust"
+preBuild.dependsOn ":buildRust"
 
 android {
     // distinct from :rsdroid's old namespace; the Kotlin packages remain net.ankiweb.rsdroid.*

@@ -31,8 +31,13 @@ dependencies {
     implementation libs.kotlin.stdlib.jdk8
 }
 
+// buildRust populates build/generated/jniLibs, declared as a resource dir below
+tasks.named('processResources') {
+    mustRunAfter(':buildRust')
+}
+
 jar {
-    mustRunAfter("buildRust")
+    mustRunAfter(":buildRust")
     sourceSets {
         main {
             resources {
